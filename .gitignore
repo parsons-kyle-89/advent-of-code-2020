@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# virtual-env
+.venv-advent-of-code-2020
+
+# Vim swap files
+*.swp
+*.swo
