@@ -11,7 +11,6 @@ EXPENSES = [
 ]
 
 
-
 def test_solution_1() -> None:
     assert solution_1(EXPENSES) == 514579
 
