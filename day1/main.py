@@ -29,7 +29,7 @@ def solution_2(expenses: List[int]) -> int:
     return answer
 
 
-def main() -> None:
+def main():
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         expenses = [int(line) for line in f.readlines()]
 
