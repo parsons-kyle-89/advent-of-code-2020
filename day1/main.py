@@ -32,6 +32,7 @@ def solution_2(expenses: List[int]) -> int:
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         expenses = [int(line) for line in f.readlines()]
+    expenses.foo
 
     print(solution_1(expenses))
     print(solution_2(expenses))
