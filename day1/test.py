@@ -12,7 +12,7 @@ EXPENSES = [
 
 
 def test_solution_1() -> None:
-    assert solution_1(EXPENSES) == 514579
+    assert solution_1(EXPENSES) == 5145790
 
 
 def test_solution_2() -> None:
