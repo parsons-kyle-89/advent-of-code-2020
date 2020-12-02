@@ -1,4 +1,4 @@
-from main import solution_1, solution_2
+from .main import solution_1, solution_2
 
 
 EXPENSES = [
