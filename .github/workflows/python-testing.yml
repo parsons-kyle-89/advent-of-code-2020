@@ -27,8 +27,8 @@ jobs:
         # This should detect if the locked requirements are stale
     - name: Check lockfile covers requirements
       run: |
-        join -v 1 <(-ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements.txt | sort) \
-                  <(-ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements-lock.txt | sort) |
+        join -v 1 <(grep -ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements.txt | sort) \
+                  <(grep -ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements-lock.txt | sort) |
         test ! -s
     - name: Lint with flake8
       run: |
