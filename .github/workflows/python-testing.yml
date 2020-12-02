@@ -26,9 +26,9 @@ jobs:
         pip install -r requirements-lock.txt -r requirements.txt
         # This should detect if the locked requirements are stale
     - name: Check lockfile covers requirements
-      run: ! |
-        join -v 1 <(grep -ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements.txt | sort) \
-                  <(grep -ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements-lock.txt | sort) |
+      run: |
+        ! join -v 1 <(grep -ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements.txt | sort) \
+                    <(grep -ioE '^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])' requirements-lock.txt | sort) |
         grep .
     - name: Lint with flake8
       run: |
