@@ -1,6 +1,6 @@
 import pytest
 
-import main
+from . import main
 
 
 def test_parse_line() -> None:
