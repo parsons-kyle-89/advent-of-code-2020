@@ -28,3 +28,106 @@ from . import main
 )
 def test_validate_password(record: str, is_valid: bool) -> None:
     assert main.validate_passport(main.parse_record(record)) == is_valid
+
+
+@pytest.mark.parametrize(
+    ['year', 'is_valid'],
+    (
+        ('2002', True),
+        ('2003', False),
+    )
+)
+def test_validate_int(year: str, is_valid: bool) -> None:
+    assert main.validate_int(year, 1920, 2002) == is_valid
+
+
+@pytest.mark.parametrize(
+    ['height', 'is_valid'],
+    (
+        ('60in', True),
+        ('190cm', True),
+        ('190in', False),
+        ('190', False),
+    )
+)
+def test_validate_height(height: str, is_valid: bool) -> None:
+    assert main.validate_height(height) == is_valid
+
+
+@pytest.mark.parametrize(
+    ['hair_color', 'is_valid'],
+    (
+        ('#123abc', True),
+        ('#123abz', False),
+        ('123abc', False),
+    )
+)
+def test_validate_hair_color(hair_color: str, is_valid: bool) -> None:
+    assert main.validate_hair_color(hair_color) == is_valid
+
+
+@pytest.mark.parametrize(
+    ['eye_color', 'is_valid'],
+    (
+        ('brn', True),
+        ('wat', False),
+    )
+)
+def test_validate_eye_color(eye_color: str, is_valid: bool) -> None:
+    assert main.validate_eye_color(eye_color) == is_valid
+
+
+@pytest.mark.parametrize(
+    ['passport_id', 'is_valid'],
+    (
+        ('000000001', True),
+        ('0123456789', False),
+    )
+)
+def test_validate_passport_id(passport_id: str, is_valid: bool) -> None:
+    assert main.validate_passport_id(passport_id) == is_valid
+
+
+@pytest.mark.parametrize(
+    ['record', 'is_valid'],
+
+    (
+        ("pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980\n"
+         "hcl:#623a2f",
+         True),
+
+        ("eyr:2029 ecl:blu cid:129 byr:1989\n"
+         "iyr:2014 pid:896056539 hcl:#a97842 hgt:165cm",
+         True),
+
+        ("hcl:#888785\n"
+         "hgt:164cm byr:2001 iyr:2015 cid:88\n"
+         "pid:545766238 ecl:hzl\n"
+         "eyr:2022",
+         True),
+
+        ("iyr:2010 hgt:158cm hcl:#b6652a ecl:blu "  # no line break
+         "byr:1944 eyr:2021 pid:093154719",
+         True),
+
+        ("eyr:1972 cid:100\n"
+         "hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926",
+         False),
+
+        ("iyr:2019\n"
+         "hcl:#602927 eyr:1967 hgt:170cm\n"
+         "ecl:grn pid:012533040 byr:1946",
+         False),
+
+        ("hcl:dab227 iyr:2012\n"
+         "ecl:brn hgt:182cm pid:021572410 eyr:2020 byr:1992 cid:277",
+         False),
+
+        ("hgt:59cm ecl:zzz\n"
+         "eyr:2038 hcl:74454a iyr:2023\n"
+         "pid:3556412378 byr:2007",
+         False),
+    )
+)
+def test_strict_validate_password(record: str, is_valid: bool) -> None:
+    assert main.strict_validate_passport(main.parse_record(record)) == is_valid
