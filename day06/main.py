@@ -1,4 +1,3 @@
-from functools import reduce
 import os.path
 from string import ascii_lowercase
 from typing import Set
@@ -7,18 +6,12 @@ SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
 
 def parse_group_or(record: str) -> Set[str]:
-    return reduce(
-        set.union,
-        (set(form) for form in record.split()),
-        set()
-    )
+    return set().union(*(set(form) for form in record.split()))
 
 
 def parse_group_and(record: str) -> Set[str]:
-    return reduce(
-        set.intersection,
-        (set(form) for form in record.split()),
-        set(ascii_lowercase)
+    return set(ascii_lowercase).intersection(
+        *(set(form) for form in record.split()),
     )
 
 
