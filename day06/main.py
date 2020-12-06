@@ -6,7 +6,7 @@ SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
 
 def parse_group_or(record: str) -> Set[str]:
-    return set().union(*(set(form) for form in record.split()))
+    return set('').union(*(set(form) for form in record.split()))
 
 
 def parse_group_and(record: str) -> Set[str]:
