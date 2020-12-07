@@ -1,3 +1,7 @@
+from typing import List, Dict
+
+import pytest
+
 from . import main
 
 
@@ -11,6 +15,47 @@ def parse_rules(raw_rules: str) -> main.WeightedDigraph[main.BagType]:
 
 def test_main() -> None:
     main.main()
+
+
+@pytest.mark.parametrize(
+    ['it', 'expected'],
+    (
+        ([], []),
+        ([1], [1]),
+        ([1, 1], [1]),
+        ([1, 2], [1, 2]),
+        ([1, 2, 3, 4], [1, 2, 3, 4]),
+        ([1, 2, 2, 4], [1, 2]),
+    )
+)
+def test_takeuntil_stable(it: List[int], expected: List[int]) -> None:
+    assert list(main.takeuntil_stable(it)) == expected
+
+
+def test_iterate_func() -> None:
+    it = main.iterate_func(lambda x: x + 1, 0)
+    assert all(actual == expected for actual, expected in zip(it, range(10)))
+
+
+@pytest.mark.parametrize(
+    ['dicts', 'expected'],
+    (
+        ([{}], {}),
+        ([{}, {}], {}),
+        ([{}, {}, {}], {}),
+        ([{'a': 1}], {'a': 1}),
+        ([{'a': 1}, {'b': 2}], {'a': 1, 'b': 2}),
+        ([{'a': 1}, {'a': 2}], {'a': 3}),
+        ([{'a': 1, 'c': 4}, {'b': 2, 'c': 3}], {'a': 1, 'b': 2, 'c': 7}),
+        ([{'a': 1}, {'a': 2}, {'b': 4}], {'a': 3, 'b': 4}),
+    )
+)
+def test_sum_dicti(
+    dicts: List[Dict[str, int]],
+    expected: Dict[str, int],
+) -> None:
+    actual = main.sum_dicts(dicts)
+    assert actual == expected
 
 
 def test_in_set() -> None:
