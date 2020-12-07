@@ -1,137 +1,146 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from itertools import takewhile
+from itertools import repeat
 import os.path
 from typing import (
-    Collection, DefaultDict, Dict, Iterable, Iterator, List,
-    Mapping, NewType, Set,
+    Callable, cast, DefaultDict, Dict, Generic, Iterable, Iterator,
+    Mapping, NewType, Set, Tuple, TypeVar,
 )
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
+A = TypeVar('A')
 BagType = NewType('BagType', str)
 
 
-@dataclass
-class SubRule:
-    bag_type: BagType
-    count: int
+def takeuntil_stable(it: Iterable[A]) -> Iterator[A]:
+    iterator = iter(it)
+    try:
+        this_value = next(iterator)
+    except StopIteration:
+        return None
+    yield this_value
+
+    while True:
+        try:
+            next_value = next(iterator)
+        except StopIteration:
+            break
+
+        if this_value == next_value:
+            break
+        yield next_value
+
+        this_value = next_value
+
+
+def iterate_func(func: Callable[[A], A], value: A) -> Iterator[A]:
+    while True:
+        yield value
+        value = func(value)
+
+
+def sum_dicts(
+    dicts: Iterable[Mapping[A, int]],
+    weights: Iterable[int] = repeat(1),
+) -> Dict[A, int]:
+    ret: DefaultDict[A, int] = defaultdict(lambda: 0)
+    for d, w in zip(dicts, weights):
+        for k, v in d.items():
+            ret[k] += v * w
+    return dict(ret)
 
 
 @dataclass
-class Rule:
-    bag_type: BagType
-    sub_rules: List[SubRule]
+class Node(Generic[A]):
+    name: A
+    out_edges: Dict[A, int]
+    in_edges: Set[A]
+
+    def register_in_edge(self, in_node: A) -> None:
+        self.in_edges.add(in_node)
 
 
-def parse_rule(raw_rule: str) -> Rule:
-    raw_bag_type, raw_sub_rules = raw_rule.split(' bags contain ', 1)
+class WeightedDigraph(Generic[A]):
+    def __init__(self, nodes: Iterable[Node[A]]) -> None:
+        self._nodes = {node.name: node for node in nodes}
+        for node_name, node in self._nodes.items():
+            for out_node_name in node.out_edges.keys():
+                self._nodes[out_node_name].register_in_edge(node_name)
+
+    def in_set(self, names: Set[A]) -> Set[A]:
+        in_sets = takeuntil_stable(
+            iterate_func(
+                lambda names_: cast(Set[A], set()).union(
+                    *(self._nodes[name].in_edges for name in names_)
+                ),
+                names
+            )
+        )
+        return cast(Set[A], set()).union(*in_sets)
+
+    def weighted_out_set(
+        self, weighted_names: Mapping[A, int],
+    ) -> Dict[A, int]:
+        out_sets = takeuntil_stable(
+            iterate_func(
+                lambda weighted_names_: sum_dicts(
+                    (
+                        self._nodes[name].out_edges
+                        for name in weighted_names_.keys()
+                    ),
+                    weighted_names_.values()
+                ),
+                weighted_names
+            )
+        )
+        return sum_dicts(out_sets)
+
+
+def parse_bag_rule(bag_rule: str) -> Node[BagType]:
+    raw_bag_type, raw_out_edges = bag_rule.split(' bags contain ', 1)
     bag_type = BagType(raw_bag_type)
-    parsed_sub_rules = [
-        parse_sub_rule(raw_sub_rule)
-        for raw_sub_rule in raw_sub_rules.strip('.').split(', ')
+    parsed_out_edges = [
+        _parse_out_edge(raw_out_edge)
+        for raw_out_edge in raw_out_edges.strip('.').split(', ')
     ]
-    sub_rules = [
-        sub_rule for sub_rule in parsed_sub_rules
-        if sub_rule.bag_type != BagType('other')
-    ]
-    return Rule(bag_type, sub_rules)
+    out_edges = {
+        bag_type: count
+        for bag_type, count in parsed_out_edges
+        if count != 0
+    }
+    return Node(bag_type, out_edges, set())
 
 
-def parse_sub_rule(raw_sub_rule: str) -> SubRule:
+def _parse_out_edge(raw_out_edge: str) -> Tuple[BagType, int]:
     stripped_raw_sub_rule = (
-        raw_sub_rule.removesuffix(' bag').removesuffix(' bags')
+        raw_out_edge.removesuffix(' bag').removesuffix(' bags')
     )
     raw_count, raw_bag_type = stripped_raw_sub_rule.split(' ', 1)
     bag_type = BagType(raw_bag_type)
-    count = parse_count(raw_count)
-    return SubRule(bag_type, count)
+    count = _parse_count(raw_count)
+    return bag_type, count
 
 
-def parse_count(raw_count: str) -> int:
+def _parse_count(raw_count: str) -> int:
     if raw_count == 'no':
         return 0
     return int(raw_count)
 
 
-def able_to_contain_any(
-    bag_types: Collection[BagType],
-    rules: Iterable[Rule],
-) -> Set[BagType]:
-    return {
-        rule.bag_type
-        for rule in rules
-        if any(
-            bag_type in [sub_rule.bag_type for sub_rule in rule.sub_rules]
-            for bag_type in bag_types
-        )
-    }
-
-
-def transitive_able_to_contain_any(
-    bag_types: Collection[BagType],
-    rules: Iterable[Rule],
-) -> Set[BagType]:
-    containing_set = able_to_contain_any(bag_types, rules)
-    while True:
-        new_containing_set = (
-            containing_set.union(able_to_contain_any(containing_set, rules))
-        )
-        if new_containing_set == containing_set:
-            break
-        containing_set = new_containing_set
-    return containing_set
-
-
-def contained_bags(
-    bag_counts: Mapping[BagType, int],
-    rules: Mapping[BagType, Rule],
-) -> Dict[BagType, int]:
-    _contained_bags: DefaultDict[BagType, int] = defaultdict(lambda: 0)
-    for bag_type, outer_bag_count in bag_counts.items():
-        rule = rules[bag_type]
-        for sub_rule in rule.sub_rules:
-            _contained_bags[sub_rule.bag_type] += (
-                outer_bag_count * sub_rule.count
-            )
-    return dict(_contained_bags)
-
-
-def bag_neighborhoods(
-    bag_type: BagType,
-    rule_map: Mapping[BagType, Rule],
-) -> Iterator[Dict[BagType, int]]:
-    neighborhood = {bag_type: 1}
-    while True:
-        yield neighborhood
-        neighborhood = contained_bags(neighborhood, rule_map)
-
-
-def bags_inside(
-    bag_type: BagType,
-    rule_map: Mapping[BagType, Rule],
-) -> Dict[BagType, int]:
-    nested_bags = takewhile(bool, bag_neighborhoods(bag_type, rule_map))
-    all_bags: DefaultDict[BagType, int] = defaultdict(lambda: 0)
-    for nested_bag in nested_bags:
-        for bag_type, count in nested_bag.items():
-            all_bags[bag_type] += count
-    all_bags[bag_type] -= 1
-    return dict(all_bags)
-
-
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
-        rules = [parse_rule(raw_rule.strip()) for raw_rule in f.readlines()]
+        bag_nodes = [
+            parse_bag_rule(raw_rule.strip()) for raw_rule in f.readlines()
+        ]
 
-    print(len(transitive_able_to_contain_any({BagType('shiny gold')}, rules)))
+    bag_rule_digraph = WeightedDigraph(bag_nodes)
+    my_bag = BagType('shiny gold')
 
-    rule_map = {rule.bag_type: rule for rule in rules}
-    print(
-        sum(count for count in bags_inside(
-            BagType('shiny gold'), rule_map
-        ).values())
-    )
+    print(len(bag_rule_digraph.in_set({my_bag})) - 1)
+
+    out_set = bag_rule_digraph.weighted_out_set({my_bag: 1})
+    print(sum(out_set.values()) - 1)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,19 @@
 from . import main
 
 
+def parse_rules(raw_rules: str) -> main.WeightedDigraph[main.BagType]:
+    bag_nodes = [
+        main.parse_bag_rule(raw_rule.strip())
+        for raw_rule in raw_rules.split('\n')
+    ]
+    return main.WeightedDigraph(bag_nodes)
+
+
 def test_main() -> None:
     main.main()
 
 
-def test_transitive_able_to_contain_any() -> None:
+def test_in_set() -> None:
     raw_rules = """
         light red bags contain 1 bright white bag, 2 muted yellow bags.
         dark orange bags contain 3 bright white bags, 4 muted yellow bags.
@@ -18,14 +26,12 @@ def test_transitive_able_to_contain_any() -> None:
         dotted black bags contain no other bags.
     """.strip()
 
-    rules = [main.parse_rule(rule.strip()) for rule in raw_rules.split('\n')]
-    actual = main.transitive_able_to_contain_any(
-        {main.BagType('shiny gold')}, rules
-    )
-    assert len(actual) == 4
+    bag_rule_digraph = parse_rules(raw_rules)
+    actual_in_set = bag_rule_digraph.in_set({main.BagType('shiny gold')})
+    assert len(actual_in_set) - 1 == 4
 
 
-def test_bags_inside() -> None:
+def test_weighted_out_set() -> None:
     raw_rules = """
         shiny gold bags contain 2 dark red bags.
         dark red bags contain 2 dark orange bags.
@@ -36,7 +42,8 @@ def test_bags_inside() -> None:
         dark violet bags contain no other bags.
     """.strip()
 
-    rules = [main.parse_rule(rule.strip()) for rule in raw_rules.split('\n')]
-    rule_map = {rule.bag_type: rule for rule in rules}
-    actual = main.bags_inside(main.BagType('shiny gold'), rule_map)
-    assert sum(count for count in actual.values()) == 126
+    bag_rule_digraph = parse_rules(raw_rules)
+    actual_weighted_out_set = (
+        bag_rule_digraph.weighted_out_set({main.BagType('shiny gold'): 1})
+    )
+    assert sum(actual_weighted_out_set.values()) - 1 == 126
