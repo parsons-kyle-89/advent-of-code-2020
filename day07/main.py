@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from itertools import repeat
+from itertools import chain, repeat, takewhile, tee
+from operator import itemgetter
 import os.path
 from typing import (
     Callable, cast, DefaultDict, Dict, Generic, Iterable, Iterator,
@@ -14,24 +15,15 @@ BagType = NewType('BagType', str)
 
 
 def takeuntil_stable(it: Iterable[A]) -> Iterator[A]:
-    iterator = iter(it)
-    try:
-        this_value = next(iterator)
-    except StopIteration:
-        return None
-    yield this_value
-
-    while True:
-        try:
-            next_value = next(iterator)
-        except StopIteration:
-            break
-
-        if this_value == next_value:
-            break
-        yield next_value
-
-        this_value = next_value
+    start_sentinel = object()
+    this_it, that_it = tee(it)
+    return map(
+        itemgetter(0),
+        takewhile(
+            lambda t: t[0] != t[1],
+            zip(this_it, chain([start_sentinel], that_it))
+        )
+    )
 
 
 def iterate_func(func: Callable[[A], A], value: A) -> Iterator[A]:
