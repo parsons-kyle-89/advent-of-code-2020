@@ -20,12 +20,16 @@ def main() -> None:
         ]
     max_id = max(boarding_ids)
     min_id = min(boarding_ids)
-    print(max_id)
+
+    answer_1 = max_id
+    assert answer_1 == 989
+    print(answer_1)
 
     missing_ids = set(range(min_id, max_id + 1)) - set(boarding_ids)
     assert len(missing_ids) == 1
-    my_id = missing_ids.pop()
-    print(my_id)
+    answer_2 = missing_ids.pop()
+    assert answer_2 == 548
+    print(answer_2)
 
 
 if __name__ == "__main__":

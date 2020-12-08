@@ -70,12 +70,14 @@ def main() -> None:
         raw_map = f.read()
     map_ = parse_map(raw_map)
 
-    solution_1 = trees_encountered(map_, 1, 3)
-    print(solution_1)
+    answer_1 = trees_encountered(map_, 1, 3)
+    assert answer_1 == 189
+    print(answer_1)
 
     slopes = [(1, 1), (1, 3), (1, 5), (1, 7), (2, 1)]
-    solution_2 = prod_trees_encountered(map_, slopes)
-    print(solution_2)
+    answer_2 = prod_trees_encountered(map_, slopes)
+    assert answer_2 == 1718180100
+    print(answer_2)
 
 
 if __name__ == "__main__":

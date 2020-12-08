@@ -34,7 +34,7 @@ def main() -> None:
         expenses = [int(line) for line in f.readlines()]
 
     answer_1 = solution_1(expenses)
-    assert answer_1 == 514579
+    assert answer_1 == 485739
     print(answer_1)
 
     answer_2 = solution_2(expenses)

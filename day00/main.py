@@ -7,10 +7,10 @@ def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         answer_1, answer_2 = f.readlines()
 
-    assert answer_1 == 'hello'
+    assert answer_1 == 'hello\n'
     print(answer_1)
 
-    assert answer_2 == 'there'
+    assert answer_2 == 'there\n'
     print(answer_2)
 
 

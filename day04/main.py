@@ -75,12 +75,17 @@ def validate_passport_id(passport_id: str) -> bool:
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         passport_batch = f.read()
-
     passports = parse_records(passport_batch)
-    print(sum(1 for passport in passports if validate_passport(passport)))
-    print(
+
+    answer_1 = sum(1 for passport in passports if validate_passport(passport))
+    assert answer_1 == 250
+    print(answer_1)
+
+    answer_2 = (
         sum(1 for passport in passports if strict_validate_passport(passport))
     )
+    assert answer_2 == 158
+    print(answer_2)
 
 
 if __name__ == "__main__":

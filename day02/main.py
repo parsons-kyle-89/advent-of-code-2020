@@ -82,20 +82,24 @@ def main() -> None:
             parse_line(line.strip()) for line in f.readlines()
         ]
 
-    print(sum(
+    answer_1 = sum(
         1 for policy, password in policy_password_pairs
         if check_password(password, policy)
-    ))
+    )
+    assert answer_1 == 465
+    print(answer_1)
 
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         policy_password_pairs_v2 = [
             parse_line_v2(line.strip()) for line in f.readlines()
         ]
 
-    print(sum(
+    answer_2 = sum(
         1 for policy, password in policy_password_pairs_v2
         if check_password_v2(password, policy)
-    ))
+    )
+    assert answer_2 == 294
+    print(answer_2)
 
 
 if __name__ == '__main__':
