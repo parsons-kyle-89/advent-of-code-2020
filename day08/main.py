@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import auto, Enum
 import os.path
-from typing import List, Set
+from typing import Iterator, List, Set
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
@@ -52,6 +52,16 @@ class InfiniteLoopError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class ProgramTermination(Exception):
+    pass
+
+
+class TerminationReason(Enum):
+    InfiniteLoop = auto()
+    NormalTermination = auto()
+
+
 class TracingInterpreter:
     def __init__(self, program: List[Instruction]) -> None:
         self._program = program
@@ -72,27 +82,62 @@ class TracingInterpreter:
         next_state = self._calculate_next_state()
         if next_state.line_number in self._line_cache:
             raise InfiniteLoopError
+        if next_state.line_number == len(self._program):
+            raise ProgramTermination
         self._state = next_state
         self._line_cache.add(next_state.line_number)
 
-    def run_until_loop(self) -> None:
+    def run(self) -> TerminationReason:
         while True:
             try:
                 self._run_step_or_raise()
             except InfiniteLoopError:
-                break
+                return TerminationReason.InfiniteLoop
+            except ProgramTermination:
+                return TerminationReason.NormalTermination
 
     @property
     def accumulator(self) -> int:
         return self._state.accumulator
 
 
+def program_patches(program: List[Instruction]) -> Iterator[List[Instruction]]:
+    for i, instruction in enumerate(program):
+        if instruction.operation == Operation.NOP:
+            new_instruction = Instruction(Operation.JMP, instruction.argument)
+        elif instruction.operation == Operation.JMP:
+            new_instruction = Instruction(Operation.NOP, instruction.argument)
+        else:
+            continue
+        patch = program.copy()
+        patch[i] = new_instruction
+        yield patch
+
+
+def patch_program(program: List[Instruction]) -> List[Instruction]:
+    for patched_program in program_patches(program):
+        interpreter = TracingInterpreter(patched_program)
+        termination_reason = interpreter.run()
+        if termination_reason == TerminationReason.NormalTermination:
+            return patched_program
+    raise RuntimeError('Patch could not be found')
+
+
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
-        program = [parse_instruction(raw_instruction) for raw_instruction in f.readlines()]
+        program = [
+            parse_instruction(raw_instruction)
+            for raw_instruction in f.readlines()
+        ]
 
     interpreter = TracingInterpreter(program)
-    interpreter.run_until_loop()
+    termination_reason = interpreter.run()
+    assert termination_reason == TerminationReason.InfiniteLoop
+    print(interpreter.accumulator)
+
+    patch = patch_program(program)
+    interpreter = TracingInterpreter(patch)
+    interpreter.run()
     print(interpreter.accumulator)
 
 
