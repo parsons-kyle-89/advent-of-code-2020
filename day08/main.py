@@ -136,12 +136,16 @@ def main() -> None:
     interpreter = TracingInterpreter(program)
     termination_reason = interpreter.run()
     assert termination_reason == TerminationReason.InfiniteLoop
-    print(interpreter.accumulator)
+    answer_1 = interpreter.accumulator
+    assert answer_1 == 1553, "first answer is wrong"
+    print(answer_1)
 
     patch = patch_program(program)
     interpreter = TracingInterpreter(patch)
     interpreter.run()
-    print(interpreter.accumulator)
+    answer_2 = interpreter.accumulator
+    assert answer_2 == 1877, "second answer is wrong"
+    print(answer_2)
 
 
 if __name__ == "__main__":
