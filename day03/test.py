@@ -16,6 +16,10 @@ RAW_TEST_MAP = """
 TEST_MAP = main.parse_map(RAW_TEST_MAP)
 
 
+def test_main() -> None:
+    main.main()
+
+
 def test_trees_encountered() -> None:
     assert main.trees_encountered(TEST_MAP, 1, 3) == 7
 

@@ -33,8 +33,13 @@ def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         expenses = [int(line) for line in f.readlines()]
 
-    print(solution_1(expenses))
-    print(solution_2(expenses))
+    answer_1 = solution_1(expenses)
+    assert answer_1 == 514579
+    print(answer_1)
+
+    answer_2 = solution_2(expenses)
+    assert answer_2 == 161109702
+    print(answer_2)
 
 
 if __name__ == '__main__':

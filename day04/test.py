@@ -3,6 +3,10 @@ import pytest
 from . import main
 
 
+def test_main() -> None:
+    main.main()
+
+
 @pytest.mark.parametrize(
     ['record', 'is_valid'],
 
