@@ -18,6 +18,9 @@ class Instruction:
     argument: int
 
 
+Program = List[Instruction]
+
+
 def parse_instruction(raw_instruction: str) -> Instruction:
     raw_operation, raw_argument = raw_instruction.split(' ', 1)
     argument = int(raw_argument)
@@ -63,7 +66,7 @@ class TerminationReason(Enum):
 
 
 class TracingInterpreter:
-    def __init__(self, program: List[Instruction]) -> None:
+    def __init__(self, program: Program) -> None:
         self._program = program
         self._state = InterpreterState(0, 0)
         self._line_cache: Set[int] = set()
@@ -101,7 +104,7 @@ class TracingInterpreter:
         return self._state.accumulator
 
 
-def program_patches(program: List[Instruction]) -> Iterator[List[Instruction]]:
+def program_patches(program: Program) -> Iterator[Program]:
     for i, instruction in enumerate(program):
         if instruction.operation == Operation.NOP:
             new_instruction = Instruction(Operation.JMP, instruction.argument)
@@ -114,7 +117,7 @@ def program_patches(program: List[Instruction]) -> Iterator[List[Instruction]]:
         yield patch
 
 
-def patch_program(program: List[Instruction]) -> List[Instruction]:
+def patch_program(program: Program) -> Program:
     for patched_program in program_patches(program):
         interpreter = TracingInterpreter(patched_program)
         termination_reason = interpreter.run()
