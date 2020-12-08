@@ -20,10 +20,14 @@ def main() -> None:
         raw_records = f.read().split('\n\n')
 
     or_groups = [parse_group_or(record) for record in raw_records]
-    print(sum(len(group) for group in or_groups))
+    answer_1 = sum(len(group) for group in or_groups)
+    assert answer_1 == 6768
+    print(answer_1)
 
     and_groups = [parse_group_and(record) for record in raw_records]
-    print(sum(len(group) for group in and_groups))
+    answer_2 = sum(len(group) for group in and_groups)
+    assert answer_2 == 3489
+    print(answer_2)
 
 
 if __name__ == "__main__":

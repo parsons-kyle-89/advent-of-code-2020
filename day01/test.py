@@ -1,4 +1,4 @@
-from .main import solution_1, solution_2
+from . import main
 
 
 EXPENSES = [
@@ -11,9 +11,13 @@ EXPENSES = [
 ]
 
 
+def test_main() -> None:
+    main.main()
+
+
 def test_solution_1() -> None:
-    assert solution_1(EXPENSES) == 514579
+    assert main.solution_1(EXPENSES) == 514579
 
 
 def test_solution_2() -> None:
-    assert solution_2(EXPENSES) == 241861950
+    assert main.solution_2(EXPENSES) == 241861950

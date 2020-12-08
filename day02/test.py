@@ -3,6 +3,10 @@ import pytest
 from . import main
 
 
+def test_main() -> None:
+    main.main()
+
+
 def test_parse_line() -> None:
     line = "1-3 a: abcde"
     expected_policy = main.Policy(1, 3, "a")

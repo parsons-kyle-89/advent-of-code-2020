@@ -1,9 +1,13 @@
 from dataclasses import dataclass
 from enum import auto, Enum
 import os.path
-from typing import Iterator, List, Set
+from typing import Iterator, List, NoReturn, Set
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
+
+
+def absurd(a: NoReturn) -> NoReturn:
+    raise RuntimeError('unreachable code reached')
 
 
 class Operation(Enum):
@@ -73,13 +77,13 @@ class TracingInterpreter:
 
     def _calculate_next_state(self) -> InterpreterState:
         instruction = self._program[self._state.line_number]
-        if instruction.operation == Operation.NOP:
+        if instruction.operation is Operation.NOP:
             return self._state.jump(1)
-        elif instruction.operation == Operation.ACC:
+        elif instruction.operation is Operation.ACC:
             return self._state.accumulate(instruction.argument).jump(1)
-        elif instruction.operation == Operation.JMP:
+        elif instruction.operation is Operation.JMP:
             return self._state.jump(instruction.argument)
-        raise RuntimeError("Impossible state reached")
+        absurd(instruction.operation)
 
     def _run_step_or_raise(self) -> None:
         next_state = self._calculate_next_state()

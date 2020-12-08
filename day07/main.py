@@ -129,10 +129,14 @@ def main() -> None:
     bag_rule_digraph = WeightedDigraph(bag_nodes)
     my_bag = BagType('shiny gold')
 
-    print(len(bag_rule_digraph.in_set({my_bag})) - 1)
+    answer_1 = len(bag_rule_digraph.in_set({my_bag})) - 1
+    assert answer_1 == 316
+    print(answer_1)
 
     out_set = bag_rule_digraph.weighted_out_set({my_bag: 1})
-    print(sum(out_set.values()) - 1)
+    answer_2 = sum(out_set.values()) - 1
+    assert answer_2 == 11310
+    print(answer_2)
 
 
 if __name__ == "__main__":
