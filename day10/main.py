@@ -1,4 +1,5 @@
 from functools import lru_cache
+from itertools import accumulate, chain
 import os.path
 from typing import List, Literal, Tuple
 
@@ -14,35 +15,17 @@ def all_chargers_jolt_diffs(jolts: List[int]) -> List[int]:
 
 
 @lru_cache(maxsize=None)
-def charger_sequences(jolt_diffs: Tuple[int, ...]) -> int:
-    if len(jolt_diffs) == 0:
+def diff_sequences(diffs: Tuple[float, ...], max_diff: float) -> int:
+    if not diffs:
         return 1
-    elif len(jolt_diffs) == 1:
-        return charger_sequences(jolt_diffs[1:])
-    elif len(jolt_diffs) == 2:
-        a, b, *_ = jolt_diffs
-        if a == b == 1:
-            return (
-                charger_sequences(jolt_diffs[1:]) +
-                charger_sequences(jolt_diffs[2:])
-            )
-        else:
-            return charger_sequences(jolt_diffs[1:])
-    else:
-        a, b, c, *_ = jolt_diffs
-        if a == 3 or b == 3:
-            return charger_sequences(jolt_diffs[1:])
-        elif c == 3:
-            return (
-                charger_sequences(jolt_diffs[1:]) +
-                charger_sequences(jolt_diffs[2:])
-            )
-        else:
-            return (
-                charger_sequences(jolt_diffs[1:]) +
-                charger_sequences(jolt_diffs[2:]) +
-                charger_sequences(jolt_diffs[3:])
-            )
+    max_steps = [
+        acc > max_diff for acc in
+        accumulate(chain(diffs, [float('inf')]))
+    ].index(True)
+    return sum(
+        diff_sequences(diffs[step:], max_diff)
+        for step in range(1, max_steps + 1)
+    )
 
 
 def main() -> None:
@@ -57,7 +40,7 @@ def main() -> None:
     assert answer_1 == 2201
     print(answer_1)
 
-    answer_2 = charger_sequences(tuple(jolt_diffs))
+    answer_2 = diff_sequences(tuple(jolt_diffs), 3)
     assert answer_2 == 169255295254528
     print(answer_2)
 

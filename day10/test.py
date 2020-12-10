@@ -22,7 +22,7 @@ def test_all_chargers_jolt_diffs() -> None:
 
 
 @pytest.mark.parametrize(
-    ["expected", "jolt_diffs"],
+    ["expected", "diffs"],
     (
         (8, (1, 3, 1, 1, 1, 3, 1, 1, 3, 1, 3, 3)),
         (19208, (
@@ -31,5 +31,5 @@ def test_all_chargers_jolt_diffs() -> None:
         )),
     )
 )
-def test_charger_sequences(expected: int, jolt_diffs: Tuple[int, ...]) -> None:
-    assert main.charger_sequences(jolt_diffs) == expected
+def test_diff_sequences(expected: int, diffs: Tuple[float, ...]) -> None:
+    assert main.diff_sequences(diffs, 3) == expected
