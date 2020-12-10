@@ -1,7 +1,7 @@
 from functools import lru_cache
 from itertools import accumulate, chain
 import os.path
-from typing import List, Literal, Tuple
+from typing import List, Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
@@ -19,10 +19,10 @@ def diff_sequences(diffs: Tuple[float, ...], max_diff: float) -> int:
     max_steps = [
         acc > max_diff for acc in
         accumulate(chain(diffs, [float('inf')]))
-    ].index(True) + 1
+    ].index(True)
     return sum(
         diff_sequences(diffs[step:], max_diff)
-        for step in range(1, max_steps)
+        for step in range(1, max_steps + 1)
     )
 
 
