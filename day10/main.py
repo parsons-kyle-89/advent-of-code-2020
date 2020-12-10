@@ -12,7 +12,7 @@ def all_chargers_jolt_diffs(jolts: List[int]) -> List[int]:
             in zip(sorted_jolts[:-1], sorted_jolts[1:])]
 
 
-@lru_cache(maxsize=None)
+@lru_cache
 def diff_sequences(diffs: Tuple[float, ...], max_diff: float) -> int:
     if not diffs:
         return 1
