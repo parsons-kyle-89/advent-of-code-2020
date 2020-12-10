@@ -5,8 +5,6 @@ from typing import List, Literal, Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
-JoltDiff = Literal[1, 3]
-
 
 def all_chargers_jolt_diffs(jolts: List[int]) -> List[int]:
     sorted_jolts = sorted(jolts)
