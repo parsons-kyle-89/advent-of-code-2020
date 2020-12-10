@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Literal, Tuple
 
 import pytest
 
@@ -40,3 +40,42 @@ def test_diff_sequences(
     diffs: Tuple[float, ...],
 ) -> None:
     assert main.diff_sequences(diffs, max_diff) == expected
+
+
+@pytest.mark.parametrize(
+    ["expected", "diffs"],
+    (
+        (8, [1, 3, 1, 1, 1, 3, 1, 1, 3, 1, 3, 3]),
+        (19208, [
+            1, 1, 1, 1, 3, 1, 1, 1, 1, 3, 3, 1, 1, 1, 3, 1,
+            1, 3, 3, 1, 1, 1, 1, 3, 1, 3, 3, 1, 1, 1, 1, 3,
+        ]),
+    )
+)
+def test_diff_sequences_non_rec(
+    expected: int,
+    diffs: List[Literal[1, 3]],
+) -> None:
+    assert main.diff_sequences_non_rec(diffs) == expected
+
+
+@pytest.mark.parametrize(
+    ["n", "expected"],
+    (
+        (0, 0),
+        (1, 1),
+        (2, 1),
+        (3, 2),
+        (4, 4),
+        (5, 7),
+        (6, 13),
+        (7, 24),
+        (8, 44),
+        (9, 81),
+        (10, 149),
+        (36, 1132436852),
+        (50, 5742568741225),
+    )
+)
+def test_tribonacci(n: int, expected: int) -> None:
+    assert main.tribonacci(n) == expected
