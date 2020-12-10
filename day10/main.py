@@ -21,10 +21,10 @@ def diff_sequences(diffs: Tuple[float, ...], max_diff: float) -> int:
     max_steps = [
         acc > max_diff for acc in
         accumulate(chain(diffs, [float('inf')]))
-    ].index(True)
+    ].index(True) + 1
     return sum(
         diff_sequences(diffs[step:], max_diff)
-        for step in range(1, max_steps + 1)
+        for step in range(1, max_steps)
     )
 
 

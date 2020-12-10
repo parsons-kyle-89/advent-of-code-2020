@@ -22,14 +22,21 @@ def test_all_chargers_jolt_diffs() -> None:
 
 
 @pytest.mark.parametrize(
-    ["expected", "diffs"],
+    ["expected", "max_diff", "diffs"],
     (
-        (8, (1, 3, 1, 1, 1, 3, 1, 1, 3, 1, 3, 3)),
-        (19208, (
+        (8, 3, (1, 3, 1, 1, 1, 3, 1, 1, 3, 1, 3, 3)),
+        (0, 2, (3, 3, 3)),
+        (8, 3.1, (1, 3, 1, 1, 1, 3, 1, 1, 3, 1, 3, 3)),
+        (2, 4, (2, 2)),
+        (19208, 3, (
             1, 1, 1, 1, 3, 1, 1, 1, 1, 3, 3, 1, 1, 1, 3, 1,
             1, 3, 3, 1, 1, 1, 1, 3, 1, 3, 3, 1, 1, 1, 1, 3,
         )),
     )
 )
-def test_diff_sequences(expected: int, diffs: Tuple[float, ...]) -> None:
-    assert main.diff_sequences(diffs, 3) == expected
+def test_diff_sequences(
+    expected: int,
+    max_diff: float,
+    diffs: Tuple[float, ...],
+) -> None:
+    assert main.diff_sequences(diffs, max_diff) == expected
