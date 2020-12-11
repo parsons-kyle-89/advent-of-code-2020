@@ -1,6 +1,7 @@
 from enum import Enum
+from itertools import repeat
 import os.path
-from typing import Callable, Sequence, Tuple
+from typing import Callable, Iterable, Sequence, Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
@@ -67,6 +68,41 @@ class StateArrangement:
             if not (r == row and c == col)
         )
 
+    def next_state_visible(self) -> "StateArrangement":
+        return self._next_state(self._visible_neighbors, 5)
+
+    def _visible_neighbors(self, row: int, col: int) -> int:
+        directions = (
+            (1, 0), (1, 1), (0, 1), (-1, 1),
+            (-1, 0), (-1, -1), (0, -1), (1, -1)
+        )
+        return sum(
+            self._first_visible(row, col, row_step, col_step) == State.Occupied
+            for row_step, col_step in directions
+        )
+
+    def _first_visible(
+        self, row: int, col: int, row_step: int, col_step: int
+    ) -> State:
+        if row_step == 0:
+            row_range: Iterable[int] = repeat(row)
+        elif row_step > 0:
+            row_range = range(row + 1, self._n_rows + 2, row_step)
+        else:
+            row_range = range(row - 1, -2, row_step)
+
+        if col_step == 0:
+            col_range: Iterable[int] = repeat(col)
+        elif col_step > 0:
+            col_range = range(col + 1, self._n_cols + 2, col_step)
+        else:
+            col_range = range(col - 1, -2, col_step)
+
+        for r, c in zip(row_range, col_range):
+            if self[r, c] in (State.Occupied, State.Empty):
+                return self[r, c]
+        return State.Floor
+
     def _next_loc_state(
         self,
         row: int,
@@ -97,8 +133,9 @@ class StateArrangement:
 
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
-        arrangement = StateArrangement.from_raw(f.read())
+        init_arrangement = StateArrangement.from_raw(f.read())
 
+    arrangement = init_arrangement
     while True:
         next_arrangement = arrangement.next_state_adjacent()
         if arrangement == next_arrangement:
@@ -108,6 +145,17 @@ def main() -> None:
     answer_1 = arrangement.num_in_state(State.Occupied)
     assert answer_1 == 2277
     print(answer_1)
+
+    arrangement = init_arrangement
+    while True:
+        next_arrangement = arrangement.next_state_visible()
+        if arrangement == next_arrangement:
+            break
+        arrangement = next_arrangement
+
+    answer_2 = arrangement.num_in_state(State.Occupied)
+    assert answer_2 == 2066
+    print(answer_2)
 
 
 if __name__ == "__main__":
