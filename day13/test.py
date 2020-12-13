@@ -19,4 +19,4 @@ def test_crt() -> None:
         main.ModularCongruence(-6, 31),
         main.ModularCongruence(-7, 19),
     ]
-    assert main.crt(congruences) == 1068781
+    assert main.crt(congruences).remainder == 1068781

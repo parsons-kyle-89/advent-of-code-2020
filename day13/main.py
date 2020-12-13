@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import reduce
-from operator import itemgetter, mul
+from operator import itemgetter
 import os.path
 from typing import Iterable, Tuple
 
@@ -63,17 +63,30 @@ class ModularCongruence:
         return f"x = {self.remainder} (mod {self.modulus})"
 
 
-def prod(it: Iterable[int]) -> int:
-    return reduce(mul, it, 1)
+def combine_modular_congruences(
+    mc1: ModularCongruence,
+    mc2: ModularCongruence,
+) -> ModularCongruence:
+    ext_gcd_res = extended_gcd(mc1.modulus, mc2.modulus)
+    if not ext_gcd_res.gcd == 1:
+        raise ValueError(
+            f'Can only combine modular congruences with relatively prime '
+            f'moduli. Got "{mc1}" and "{mc2}".'
+        )
+    new_modulus = mc1.modulus * mc2.modulus
+    new_remainder = (
+        mc1.remainder * ext_gcd_res.b * mc2.modulus +
+        mc2.remainder * ext_gcd_res.a * mc1.modulus
+    ) % new_modulus
+    return ModularCongruence(new_remainder, new_modulus)
 
 
-def crt(congruences: Iterable[ModularCongruence]) -> int:
-    rs = [mc.remainder for mc in congruences]
-    ns = [mc.modulus for mc in congruences]
-    N = prod(ns)
-    ys = [N // n for n in ns]
-    zs = [inverse_mod_n(y, n) for y, n in zip(ys, ns)]
-    return sum(r * y * z for r, y, z in zip(rs, ys, zs)) % N
+def crt(congruences: Iterable[ModularCongruence]) -> ModularCongruence:
+    return reduce(
+        combine_modular_congruences,
+        congruences,
+        ModularCongruence(0, 1)
+    )
 
 
 def next_departure_bus_and_wait(
@@ -100,7 +113,7 @@ def main() -> None:
     assert answer_1 == 2545
     print(answer_1)
 
-    answer_2 = crt(congruences)
+    answer_2 = crt(congruences).remainder
     assert answer_2 == 266204454441577
     print(answer_2)
 
