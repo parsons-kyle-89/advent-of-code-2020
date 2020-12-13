@@ -50,10 +50,6 @@ def extended_gcd(m: int, n: int) -> ExtendedGCDResult:
     )
 
 
-def inverse_mod_n(m: int, n: int) -> int:
-    return extended_gcd(m, n).a
-
-
 @dataclass(frozen=True)
 class ModularCongruence:
     remainder: int
