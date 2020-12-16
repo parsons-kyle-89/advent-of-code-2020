@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from functools import reduce
 from itertools import chain
+from operator import mul
 import os.path
-from typing import Iterable, Iterator, List
+from typing import Dict, Iterable, Iterator, List, Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
@@ -59,6 +61,24 @@ def is_valid(ticket: Ticket, rules: Iterable[Rule]) -> bool:
     return len(list(invalid_fields(ticket, rules))) == 0
 
 
+def pop_known_correspondence(
+    idx_to_rules: Dict[int, List[Rule]]
+) -> Tuple[int, Rule]:
+    try:
+        idx, rules = next(
+            (idx, rules)
+            for idx, rules in idx_to_rules.items()
+            if len(rules) == 1
+        )
+    except StopIteration:
+        raise ValueError("idx_to_rules contains no known correspondence")
+    rule = rules[0]
+    for other_rules in idx_to_rules.values():
+        other_rules.remove(rule)
+    idx_to_rules.pop(idx)
+    return idx, rule
+
+
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         raw_rules, raw_my_ticket, raw_nearby_tickets = (
@@ -74,12 +94,38 @@ def main() -> None:
     answer_1 = sum(chain.from_iterable(
         invalid_fields(ticket, rules) for ticket in nearby_tickets
     ))
+    assert answer_1 == 26009
     print(answer_1)
 
+    my_ticket = parse_ticket(raw_my_ticket.splitlines()[1])
     valid_nearby_tickets = [
-        ticket for ticket in nearby_tickets 
+        ticket for ticket in nearby_tickets
         if is_valid(ticket, rules)
-    ]
+    ] + [my_ticket]
+    idx_to_rules = {
+        idx: [
+            rule for rule in rules
+            if all(rule.validate(value) for value in field)
+        ]
+        for idx, field in enumerate(zip(*valid_nearby_tickets))
+    }
+    idx_to_rule = {}
+    while idx_to_rules:
+        idx, rule = pop_known_correspondence(idx_to_rules)
+        idx_to_rule[idx] = rule
+    nice_my_ticket = {
+        rule.name: my_ticket[idx] for idx, rule in idx_to_rule.items()
+    }
+    answer_2 = reduce(
+        mul,
+        (
+            value for name, value in nice_my_ticket.items()
+            if name.startswith('departure')
+        ),
+        1
+    )
+    assert answer_2 == 589685618167
+    print(answer_2)
 
 
 if __name__ == "__main__":
