@@ -61,6 +61,21 @@ def is_valid(ticket: Ticket, rules: Iterable[Rule]) -> bool:
     return len(list(invalid_fields(ticket, rules))) == 0
 
 
+def deduce(tickets: Iterable[Ticket], rules: Iterable[Rule]) -> Dict[int, str]:
+    idx_to_rules = {
+        idx: [
+            rule for rule in rules
+            if all(rule.validate(value) for value in field)
+        ]
+        for idx, field in enumerate(zip(*tickets))
+    }
+    idx_to_name = {}
+    while idx_to_rules:
+        idx, rule = pop_known_correspondence(idx_to_rules)
+        idx_to_name[idx] = rule.name
+    return idx_to_name
+
+
 def pop_known_correspondence(
     idx_to_rules: Dict[int, List[Rule]]
 ) -> Tuple[int, Rule]:
@@ -102,20 +117,8 @@ def main() -> None:
         ticket for ticket in nearby_tickets
         if is_valid(ticket, rules)
     ] + [my_ticket]
-    idx_to_rules = {
-        idx: [
-            rule for rule in rules
-            if all(rule.validate(value) for value in field)
-        ]
-        for idx, field in enumerate(zip(*valid_nearby_tickets))
-    }
-    idx_to_rule = {}
-    while idx_to_rules:
-        idx, rule = pop_known_correspondence(idx_to_rules)
-        idx_to_rule[idx] = rule
-    nice_my_ticket = {
-        rule.name: my_ticket[idx] for idx, rule in idx_to_rule.items()
-    }
+    idx_to_name = deduce(valid_nearby_tickets, rules)
+    nice_my_ticket = {name: my_ticket[i] for i, name in idx_to_name.items()}
     answer_2 = reduce(
         mul,
         (
