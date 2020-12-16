@@ -3,11 +3,13 @@ from functools import reduce
 from itertools import chain
 from operator import mul
 import os.path
+import re
 from typing import Dict, Iterable, Iterator, List, Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
 Ticket = List[int]
+RULE_RE = re.compile(r'\A([^:]*): (\d*)-(\d*) or (\d*)-(\d*)\Z', re.ASCII)
 
 
 @dataclass(frozen=True)
@@ -33,18 +35,14 @@ class Rule:
 
     @classmethod
     def from_str(cls, raw_rule: str) -> "Rule":
-        name, raw_ranges = raw_rule.split(': ', 1)
-        raw_lower_range, raw_upper_range = raw_ranges.split(' or ')
+        (name, raw_lower_a, raw_lower_b, raw_upper_a, raw_upper_b), *_ = (
+            re.findall(RULE_RE, raw_rule)
+        )
         return cls(
             name,
-            cls._parse_range(raw_lower_range),
-            cls._parse_range(raw_upper_range),
+            Range(int(raw_lower_a), int(raw_lower_b)),
+            Range(int(raw_upper_a), int(raw_upper_b)),
         )
-
-    @staticmethod
-    def _parse_range(raw_range: str) -> Range:
-        raw_lower, raw_upper = raw_range.split('-', 1)
-        return Range(int(raw_lower), int(raw_upper))
 
 
 def parse_ticket(raw_ticket: str) -> Ticket:
@@ -52,9 +50,10 @@ def parse_ticket(raw_ticket: str) -> Ticket:
 
 
 def invalid_fields(ticket: Ticket, rules: Iterable[Rule]) -> Iterator[int]:
-    for field in ticket:
-        if all(not rule.validate(field) for rule in rules):
-            yield field
+    return iter(
+        field for field in ticket
+        if all(not rule.validate(field) for rule in rules)
+    )
 
 
 def is_valid(ticket: Ticket, rules: Iterable[Rule]) -> bool:
