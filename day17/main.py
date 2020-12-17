@@ -1,34 +1,22 @@
-from dataclasses import dataclass
 from enum import Enum
 from itertools import product
 import os.path
-from typing import Callable, Iterable, Iterator, Mapping, Tuple, TypeVar
+from typing import (
+    Callable, Iterable, Iterator, NewType, Mapping, Tuple, TypeVar
+)
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
 A = TypeVar('A')
 B = TypeVar('B')
 C = TypeVar('C')
-
-
-@dataclass(frozen=True)
-class Point:
-    dim: int
-    data: Tuple[int, ...]
-
-
-@dataclass(frozen=True)
-class Vector:
-    dim: int
-    data: Tuple[int, ...]
+Point = NewType('Point', Tuple[int, ...])
+Vector = NewType('Vector', Tuple[int, ...])
 
 
 def vadd(point: Point, vector: Vector) -> Point:
-    assert point.dim == vector.dim
-    return Point(
-        point.dim,
-        tuple(x + v for x, v in zip(point.data, vector.data)),
-    )
+    assert len(point) == len(vector)
+    return Point(tuple(x + v for x, v in zip(point, vector)))
 
 
 class CubeState(Enum):
@@ -91,11 +79,9 @@ class ConwayCube(Mapping[Point, A]):
         )
 
     def _validate_point(self, point: Point) -> None:
-        if not isinstance(point, Point):
-            raise TypeError(f"Needed point, got {point}")
-        if not point.dim == self._dim:
+        if not len(point) == self._dim:
             raise ValueError(
-                f"Point dimension ({point.dim}) must match cube "
+                f"Point dimension ({len(point)}) must match cube "
                 f"dimension ({self._dim})"
             )
 
@@ -131,7 +117,7 @@ def associate_cubes(
 
 def count_active_neighbors(cube: ConwayCube[CubeState]) -> ConwayCube[int]:
     shifts = [
-        Vector(cube.dim, vec)
+        Vector(vec)
         for vec in product([-1, 0, 1], repeat=cube.dim)
         if vec != (0,) * cube.dim
     ]
@@ -152,7 +138,7 @@ def next_state(cube: ConwayCube[CubeState]) -> ConwayCube[CubeState]:
 def parse_initial_state(raw_lattice: str, dim: int) -> ConwayCube[CubeState]:
     return ConwayCube({
         Point(
-            dim, (row_num, col_num, *[0 for _ in range(dim - 2)])
+            (row_num, col_num, *[0 for _ in range(dim - 2)])
         ): CubeState(cell)
         for row_num, row in enumerate(raw_lattice.splitlines())
         for col_num, cell in enumerate(row)
