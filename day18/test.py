@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pytest
 
 from . import main
@@ -35,3 +37,9 @@ def test_new_math(eq: str, expected: int) -> None:
 )
 def test_newer_math(eq: str, expected: int) -> None:
     assert main.newer_math(eq) == expected
+
+
+@pytest.mark.parametrize("calculator", (main.new_math, main.newer_math))
+def test_validate_equation(calculator: Callable[[str], int]) -> None:
+    with pytest.raises(ValueError):
+        calculator("hack('the_world')")

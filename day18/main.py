@@ -66,11 +66,23 @@ def other_translate_raw_equation(raw_equation: str) -> str:
 
 
 def new_math(eq: str) -> int:
+    validate_equation(eq)
     return int(eval(translate_raw_equation(eq)))
 
 
 def newer_math(eq: str) -> int:
+    validate_equation(eq)
     return int(eval(other_translate_raw_equation(eq)))
+
+
+def validate_equation(eq: str) -> None:
+    valid_chars = ''.join(sorted("0123456789+*() \n"))
+    if not set(eq) <= set(valid_chars):
+        raise ValueError(
+            f"eq must only contain valid characters {repr(valid_chars)}. "
+            f"Got {repr(''.join(sorted(set(eq))))} in {eq} "
+            f"with {set(eq) - set(valid_chars)} extra"
+        )
 
 
 def main() -> None:
