@@ -10,7 +10,7 @@ def parse_rule(raw_rule: str) -> Tuple[int, Set[str]]:
     ref, pipe_delim_parts = raw_rule.split(': ')
     parts = {
         (
-            re.sub(r"(\d+)", lambda m: f"{{{m.group(0)}}}", part)
+            re.sub(r'(\d+)', lambda m: f'{{{m.group(0)}}}', part)
             .replace(' ', '')
             .replace('"', '')
         )
@@ -38,58 +38,32 @@ def simplify_rule_dict(rule_dict: Dict[int, Set[str]]) -> Dict[int, Set[str]]:
 
 
 def simplify_rule(rule: Set[str], rule_dict: Dict[int, Set[str]]) -> Set[str]:
-    no_rules: Set[str] = set()
-    return no_rules.union(*(
+    no_options: Set[str] = set()
+    return no_options.union(*(
         deref_option(option, rule_dict)
         for option in rule
     ))
 
 
 def deref_option(option: str, rule_dict: Dict[int, Set[str]]) -> Set[str]:
-    refs = [int(match) for match in re.findall(r"{(\d+)}", option)]
-    stripped_option = re.sub(r"(\d+)", '', option)
+    refs = [int(match) for match in re.findall(r'{(\d+)}', option)]
+    anonymous_option = re.sub(r'\d+', '', option)
     return {
-        stripped_option.format(*derefs) for derefs in
+        anonymous_option.format(*derefs) for derefs in
         product(*(rule_dict[ref] for ref in refs))
     }
 
 
-def pref_removed_once_or_more(
-    string: str,
-    rule: Set[str],
-) -> Iterator[str]:
-    for option in rule:
-        if (stripped := string.removeprefix(option)) != string:
-            yield stripped
-            yield from pref_removed_once_or_more(stripped, rule)
-
-
-def matches_front_and_back_equal(
+def pref_suff_strip_equally(
     string: str,
     pref_rule: Set[str],
     suff_rule: Set[str],
-) -> bool:
-    return (
-        any(
-            string == pref + suff
-            for pref in pref_rule
-            for suff in suff_rule
-        ) or
-        any(
-            matches_front_and_back_equal(
-                stripped,
-                pref_rule,
-                suff_rule,
-            )
-            for pref in pref_rule
-            for suff in suff_rule
-            if len(stripped := (
-               string
-               .removeprefix(pref)
-               .removesuffix(suff)
-            )) == len(string) - len(pref) - len(suff)
-        )
-    )
+) -> Iterator[str]:
+    for pref_option, suff_option in product(pref_rule, suff_rule):
+        stripped = string.removeprefix(pref_option).removesuffix(suff_option)
+        if len(stripped) == len(string) - len(pref_option) - len(suff_option):
+            yield stripped
+            yield from pref_suff_strip_equally(stripped, pref_rule, suff_rule)
 
 
 def matches_special_case(
@@ -98,8 +72,11 @@ def matches_special_case(
     rule_31: Set[str],
 ) -> int:
     return any(
-        matches_front_and_back_equal(stripped, rule_42, rule_31)
-        for stripped in pref_removed_once_or_more(example, rule_42)
+        rule_8_and_11_candidate == ''
+        for rule_8_candidate in pref_suff_strip_equally(example, rule_42, {''})
+        for rule_8_and_11_candidate in pref_suff_strip_equally(
+            rule_8_candidate, rule_42, rule_31
+        )
     )
 
 
