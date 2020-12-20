@@ -1,5 +1,4 @@
 from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass
 from enum import auto, Enum
 from functools import reduce
@@ -14,6 +13,10 @@ SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
 TileArrangement = List[List[Optional["Tile"]]]
 A = TypeVar("A")
+
+
+def rev_str(edge: Sequence[str]) -> str:
+    return ''.join(reversed(edge))
 
 
 def cols(image: str) -> List[str]:
@@ -169,10 +172,6 @@ class Tile:
         )
 
 
-def rev_str(edge: Sequence[str]) -> str:
-    return ''.join(reversed(edge))
-
-
 def parse_tile(raw_tile: str) -> Tile:
     header, *info_rows = raw_tile.split('\n')
     tile_id = int(header.removeprefix('Tile ').removesuffix(':'))
@@ -202,6 +201,31 @@ def parse_tile(raw_tile: str) -> Tile:
     )
 
 
+def arrange_tiles(
+    tiles: List[Tile],
+    initial_arr: TileArrangement,
+) -> Iterator[List[List[Tile]]]:
+    if arrangement_is_full(initial_arr):
+        yield cast(List[List[Tile]], initial_arr)
+    else:
+        row_num, col_num = next_empty_loc(initial_arr)
+        for tile, rest_tiles in partitions_of_one(tiles):
+            for angle, flip in product(Angle, Flip):
+                trans_tile = tile.rotate(angle).flip(flip)
+                if row_num > 0:
+                    to_the_above = initial_arr[row_num - 1][col_num]
+                    assert to_the_above is not None
+                    if not trans_tile.matches(to_the_above, Direction.ABOVE):
+                        continue
+                if col_num > 0:
+                    to_the_left = initial_arr[row_num][col_num - 1]
+                    assert to_the_left is not None
+                    if not trans_tile.matches(to_the_left, Direction.LEFT):
+                        continue
+                next_arr = set_loc(trans_tile, row_num, col_num, initial_arr)
+                yield from arrange_tiles(rest_tiles, next_arr)
+
+
 def arrangement_is_full(tile_arr: TileArrangement) -> bool:
     return all(all(loc is not None for loc in row) for row in tile_arr)
 
@@ -226,31 +250,6 @@ def set_loc(
     new_arr = [[loc for loc in row] for row in tile_arr]
     new_arr[row_num][col_num] = tile
     return new_arr
-
-
-def arrange_tiles(
-    tiles: List[Tile],
-    initial_arr: TileArrangement,
-) -> Iterator[List[List[Tile]]]:
-    if arrangement_is_full(initial_arr):
-        yield cast(List[List[Tile]], initial_arr)
-    else:
-        row_num, col_num = next_empty_loc(initial_arr)
-        for tile, rest_tiles in partitions_of_one(tiles):
-            for angle, flip in product(Angle, Flip):
-                trans_tile = tile.rotate(angle).flip(flip)
-                if row_num > 0:
-                    to_the_above = initial_arr[row_num - 1][col_num]
-                    assert to_the_above is not None
-                    if not trans_tile.matches(to_the_above, Direction.ABOVE):
-                        continue
-                if col_num > 0:
-                    to_the_left = initial_arr[row_num][col_num - 1]
-                    assert to_the_left is not None
-                    if not trans_tile.matches(to_the_left, Direction.LEFT):
-                        continue
-                next_arr = set_loc(trans_tile, row_num, col_num, initial_arr)
-                yield from arrange_tiles(rest_tiles, next_arr)
 
 
 def sort_by_edge_match_count(tiles: List[Tile]) -> List[Tile]:
@@ -301,48 +300,53 @@ def strip_border(image: str) -> str:
     )
 
 
-def delete_patterns(
-    img: List[List[str]],
+def highlight_in_any_orientation(
+    image: str,
     pattern: Dict[Tuple[int, int], str],
-    null_marker: str,
-) -> List[List[str]]:
-    img_copy = deepcopy(img)
-    for row_num, row in enumerate(img):
+    highlight: str,
+) -> str:
+    for angle, flip in product(Angle, Flip):
+        trans_image = flip.transform(angle.transform(image))
+        highlighted_image = highlight_patterns(trans_image, pattern, highlight)
+        if trans_image != highlighted_image:
+            return highlighted_image
+    raise ValueError("No pattern found in any orientation!!")
+
+
+def highlight_patterns(
+    image: str,
+    pattern: Dict[Tuple[int, int], str],
+    highlight: str,
+) -> str:
+    image_matrix = [list(row) for row in image.splitlines()]
+    for row_num, row in enumerate(image_matrix):
         for col_num, _ in enumerate(row):
-            if pattern_at(img_copy, (row_num, col_num), pattern):
-                delete_pattern_at(
-                    img_copy, (row_num, col_num), pattern, null_marker
-                )
-    return img_copy
+            if is_pattern_at(image_matrix, (row_num, col_num), pattern):
+                for (d_row, d_col), _ in pattern.items():
+                    image_matrix[row_num + d_row][col_num + d_col] = highlight
+    return '\n'.join(''.join(row) for row in image_matrix)
 
 
-def delete_pattern_at(
-    img: List[List[str]],
-    loc: Tuple[int, int],
-    pattern: Dict[Tuple[int, int], str],
-    null_marker: str,
-) -> None:
-    row_num, col_num = loc
-    for (d_row, d_col), _ in pattern.items():
-        img[row_num + d_row][col_num + d_col] = null_marker
-
-
-def pattern_at(
-    img: List[List[str]],
+def is_pattern_at(
+    img_mat: List[List[str]],
     loc: Tuple[int, int],
     pattern: Dict[Tuple[int, int], str],
 ) -> bool:
     row_num, col_num = loc
     return all(
-        get_px(img, row_num + d_row, col_num + d_col) == px
+        get_px(img_mat, row_num + d_row, col_num + d_col) == px
         for (d_row, d_col), px in pattern.items()
     )
 
 
-def get_px(img: List[List[str]], row_num: int, col_num: int) -> Optional[str]:
-    if row_num < 0 or row_num >= len(img):
+def get_px(
+    img_mat: List[List[str]],
+    row_num: int,
+    col_num: int,
+) -> Optional[str]:
+    if row_num < 0 or row_num >= len(img_mat):
         return None
-    row = img[row_num]
+    row = img_mat[row_num]
     if col_num < 0 or col_num >= len(row):
         return None
     return row[col_num]
@@ -370,6 +374,7 @@ def main() -> None:
     side_len = 12
     assert side_len ** 2 == len(tiles)
     initial_arr: TileArrangement = [[None] * side_len] * side_len
+
     arrangement = next(arrange_tiles(sorted_tiles, initial_arr))
     answer_1 = (
         arrangement[0][0].tile_id *
@@ -381,18 +386,11 @@ def main() -> None:
     print(answer_1)
 
     image = make_image(arrangement)
-    for angle, flip in product(Angle, Flip):
-        trans_image = flip.transform(angle.transform(image))
-        image_matrix = [list(row) for row in trans_image.splitlines()]
-        matrix_no_monsters = delete_patterns(
-            image_matrix, sea_monster_pattern(), 'O'
-        )
-        if image_matrix != matrix_no_monsters:
-            break
-    else:
-        raise ValueError("No monsters found in any orientation!!")
-    print('\n'.join(''.join(row) for row in matrix_no_monsters))
-    answer_2 = sum(1 for row in matrix_no_monsters for px in row if px == '#')
+    highlighted_image = highlight_in_any_orientation(
+        image, sea_monster_pattern(), '\x1b[6;30;42mO\x1b[0m'
+    )
+    # print(highlighted_image)
+    answer_2 = highlighted_image.count('#')
     assert answer_2 == 2442
     print(answer_2)
 
