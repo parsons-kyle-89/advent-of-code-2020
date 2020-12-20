@@ -22,3 +22,12 @@ def test_partitions_of_one(
     expected: List[Tuple[int, List[int]]],
 ) -> None:
     assert list(main.partitions_of_one(seq)) == expected
+
+
+def test_strip_border() -> None:
+    img = (
+        "abc\n"
+        "def\n"
+        "ghi"
+    )
+    assert main.strip_border(img) == "e"
