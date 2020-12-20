@@ -1,12 +1,11 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import auto, Enum
-from functools import reduce
 from itertools import product
 import os.path
 from typing import (
-    cast, Dict, Iterator, List, MutableMapping, NoReturn, Optional, Protocol,
-    Sequence, Tuple, TypeVar
+    cast, Dict, Iterator, List, MutableMapping, NoReturn, Optional,
+    Sequence, Tuple, TypeVar, Union
 )
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
@@ -27,50 +26,47 @@ def rows(image: str) -> List[str]:
     return image.splitlines()
 
 
-class Transformation(Protocol):
-    def transform(self, image: str) -> str:
-        ...
-
-
 class Angle(Enum):
     ID = auto()
     QUARTER = auto()
     HALF = auto()
     THREE_QUARTER = auto()
 
-    def transform(self, image: str) -> str:
-        if self is Angle.ID:
-            return image
-        elif self is Angle.QUARTER:
-            return '\n'.join(
-                rev_str(col)
-                for col in cols(image)
-            )
-        elif self is Angle.HALF:
-            return '\n'.join(
-                rev_str(row)
-                for row in reversed(rows(image))
-            )
-        elif self is Angle.THREE_QUARTER:
-            return '\n'.join(
-                col
-                for col in reversed(cols(image))
-            )
-        absurd: NoReturn = self
-        raise ValueError(f"found absurd with value {absurd}")
+
+def rotate_image(image: str, angle: Angle) -> str:
+    if angle is Angle.ID:
+        return image
+    elif angle is Angle.QUARTER:
+        return '\n'.join(
+            rev_str(col)
+            for col in cols(image)
+        )
+    elif angle is Angle.HALF:
+        return '\n'.join(
+            rev_str(row)
+            for row in reversed(rows(image))
+        )
+    elif angle is Angle.THREE_QUARTER:
+        return '\n'.join(
+            col
+            for col in reversed(cols(image))
+        )
+    absurd: NoReturn = angle
+    raise ValueError(f"found absurd with value {absurd}")
 
 
 class Flip(Enum):
     ID = auto()
     FLIP = auto()
 
-    def transform(self, image: str) -> str:
-        if self is Flip.ID:
-            return image
-        elif self is Flip.FLIP:
-            return '\n'.join(rev_str(row) for row in image.splitlines())
-        absurd: NoReturn = self
-        raise ValueError(f"found absurd with value {absurd}")
+
+def flip_image(image: str, flip: Flip) -> str:
+    if flip is Flip.ID:
+        return image
+    elif flip is Flip.FLIP:
+        return '\n'.join(rev_str(row) for row in image.splitlines())
+    absurd: NoReturn = flip
+    raise ValueError(f"found absurd with value {absurd}")
 
 
 class Direction(Enum):
@@ -88,7 +84,7 @@ class Tile:
     border_c: str
     border_d: str
     image: str
-    transformations: List[Transformation]
+    transformations: List[Union[Angle, Flip]]
 
     def rotate(self, angle: Angle) -> "Tile":
         transformations = self.transformations + [angle]
@@ -156,11 +152,20 @@ class Tile:
         raise ValueError(f"found absurd with value {absurd}")
 
     def flatten(self) -> "Tile":
-        trans_image = reduce(
-            lambda img, trans: trans.transform(img),
-            self.transformations,
-            self.image
-        )
+        """
+        We don't need to transform the image at each step to solve the puzzle
+        and it's computationally intensive to do so so we cache the
+        transformations and then apply them to the image on demand.
+        """
+        trans_image = self.image
+        for trans in self.transformations:
+            if isinstance(trans, Angle):
+                trans_image = rotate_image(trans_image, trans)
+            elif isinstance(trans, Flip):
+                trans_image = flip_image(trans_image, trans)
+            else:
+                absurd: NoReturn = trans
+                raise ValueError(f"found absurd with value {absurd}")
         return Tile(
             self.tile_id,
             self.border_a,
@@ -306,7 +311,7 @@ def highlight_in_any_orientation(
     highlight: str,
 ) -> str:
     for angle, flip in product(Angle, Flip):
-        trans_image = flip.transform(angle.transform(image))
+        trans_image = flip_image(rotate_image(image, angle), flip)
         highlighted_image = highlight_patterns(trans_image, pattern, highlight)
         if trans_image != highlighted_image:
             return highlighted_image
