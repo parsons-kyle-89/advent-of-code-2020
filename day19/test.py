@@ -11,6 +11,19 @@ def test_main() -> None:
 
 
 @pytest.mark.parametrize(
+    ['rule', 'expected'],
+    (
+        ('77: 30 112 | 20 13', (77, {'{30}{112}', '{20}{13}'})),
+        ('77: "a"', (77, {'a'})),
+        ('77: "a" | 20 13', (77, {'a', '{20}{13}'})),
+        ('77: "a" 13 | 20 13', (77, {'a{13}', '{20}{13}'})),
+    )
+)
+def test_parse_rule(rule: str, expected: Tuple[int, Set[str]]) -> None:
+    assert main.parse_rule(rule) == expected
+
+
+@pytest.mark.parametrize(
     ["example", "expected"],
     (
         ('ababbb', True),
@@ -71,12 +84,10 @@ def flat_rule_0() -> Iterator[Set[str]]:
         '5: "b"\n'
     )
     rule_dict = dict(
-        main.parse_compound_rule(compound_rule)
-        for compound_rule in block_rules.splitlines()
+        main.parse_rule(rule) for rule in block_rules.splitlines()
     )
-    simple_rule_dict = main.full_simplify_rule_dict(rule_dict)
-
-    yield main.flatten_rule(simple_rule_dict[main.RuleRef(0)])
+    simple_rule_dict = main.fully_simplify_rule_dict(rule_dict)
+    yield simple_rule_dict[0]
 
 
 @pytest.fixture(scope='module')
@@ -115,11 +126,7 @@ def flat_rules_42_and_31() -> Iterator[Tuple[Set[str], Set[str]]]:
         '24: 14 1\n'
     )
     rule_dict = dict(
-        main.parse_compound_rule(compound_rule)
-        for compound_rule in block_rules.splitlines()
+        main.parse_rule(rule) for rule in block_rules.splitlines()
     )
-    simple_rule_dict = main.full_simplify_rule_dict(rule_dict)
-
-    flat_rule_42 = main.flatten_rule(simple_rule_dict[main.RuleRef(42)])
-    flat_rule_31 = main.flatten_rule(simple_rule_dict[main.RuleRef(31)])
-    yield flat_rule_42, flat_rule_31
+    simple_rule_dict = main.fully_simplify_rule_dict(rule_dict)
+    yield simple_rule_dict[42], simple_rule_dict[31]
