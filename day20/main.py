@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from enum import auto, Enum
 from itertools import product
 import os.path
-from typing import cast, Dict, Iterator, List, NoReturn, Optional, Sequence, Set, Tuple, TypeVar
+from typing import (
+    cast, Iterator, List, NoReturn, Optional, Sequence, Tuple, TypeVar
+)
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
@@ -172,105 +174,24 @@ def arrange_tiles(
                     if not trans_tile.matches(to_the_left, Direction.LEFT):
                         continue
                 next_arr = set_loc(trans_tile, row_num, col_num, initial_arr)
-                print(overview_arr_2(next_arr))
-                print()
                 yield from arrange_tiles(rest_tiles, next_arr)
-
-
-def overview_arr_2(arr: TileArrangement) -> str:
-    return '\n'.join(
-        ''.join(
-            '#' if loc is not None else '.'
-            for loc in row
-        ) for row in arr
-    )
-
-
-def anneal_tiles(tiles: List[Tile]) -> Dict[Tuple[int, int], Tile]:
-    arr: Dict[Tuple[int, int], Tile] = {}
-    open_locs: Set[Tuple[int, int]] = set()
-    tile = tiles.pop()
-    _add_tile(tile, (0, 0), arr, open_locs)
-    while tiles:
-        loc = open_locs.pop()
-        for tile, rot, flip in product(tiles, Angle, Flip):
-            trans_tile = tile.rotate(rot).flip(flip)
-            if _check_loc(trans_tile, loc, arr):
-                tiles.remove(tile)
-                _add_tile(tile, loc, arr, open_locs)
-                break
-        else:
-            print(overview_arr(arr))
-            print()
-    return arr
-
-
-def _check_loc(
-    tile: Tile,
-    loc: Tuple[int, int],
-    arr: Dict[Tuple[int, int], Tile],
-) -> bool:
-    x, y = loc
-    for dx, dy, direction in (
-        (0, 1, Direction.RIGHT),
-        (0, -1, Direction.LEFT),
-        (1, 0, Direction.ABOVE),
-        (-1, 0, Direction.BELOW),
-    ):
-        new_loc = (x + dx, y + dy)
-        if (
-            (neighbor_tile := arr.get(new_loc)) is not None and
-            not tile.matches(neighbor_tile, direction)
-        ):
-            return False
-    return True
-
-
-def _add_tile(
-    tile: Tile,
-    loc: Tuple[int, int],
-    arr: Dict[Tuple[int, int], Tile],
-    open_locs: Set[Tuple[int, int]],
-) -> None:
-    arr[loc] = tile
-    x, y = loc
-    for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
-        new_loc = (x + dx, y + dy)
-        if new_loc not in arr:
-            open_locs.add(new_loc)
-
-
-def overview_arr(arr: Dict[Tuple[int, int], Tile]) -> str:
-    x_min = min(p[0] for p in arr)
-    x_max = max(p[0] for p in arr)
-    y_min = min(p[1] for p in arr)
-    y_max = max(p[1] for p in arr)
-    return '\n'.join(
-        ''.join(
-            '#' if (x, y) in arr else '.' 
-            for y in range(y_min, y_max + 1)
-        ) for x in range(x_min, x_max + 1)
-    )
 
 
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
         tiles = [parse_tile(tile.strip()) for tile in f.read().split('\n\n')]
 
-#     arrangement = anneal_tiles(tiles)
-#     print(arrangement)
     side_len = 12
     assert side_len ** 2 == len(tiles)
     initial_arr: TileArrangement = [[None] * side_len] * side_len
-    arrangements = list(arrange_tiles(tiles, initial_arr))
-    print(len(arrangements))
-    arrangement = arrangements[0]
+    arrangement = next(arrange_tiles(tiles, initial_arr))
     answer_1 = (
         arrangement[0][0].tile_id *
         arrangement[0][-1].tile_id *
         arrangement[-1][-1].tile_id *
         arrangement[-1][0].tile_id
     )
+    assert answer_1 == 12519494280967
     print(answer_1)
 
 
