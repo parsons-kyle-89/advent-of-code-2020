@@ -1,5 +1,5 @@
-import os.path
 from itertools import product
+import os.path
 import re
 from typing import Dict, Iterator, Set, Tuple
 
