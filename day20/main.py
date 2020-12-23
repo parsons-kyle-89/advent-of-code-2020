@@ -186,15 +186,6 @@ def parse_tile(raw_tile: str) -> Tile:
     border_d = ''.join(row[0] for row in reversed(info_rows))
     image = '\n'.join(info_rows)
 
-    len(border_a) == 10
-    set(border_a) <= set('#.')
-    len(border_b) == 10
-    set(border_b) <= set('#.')
-    len(border_c) == 10
-    set(border_c) <= set('#.')
-    len(border_d) == 10
-    set(border_d) <= set('#.')
-
     return Tile(
         tile_id,
         border_a,
