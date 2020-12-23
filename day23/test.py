@@ -15,7 +15,6 @@ def test_main() -> None:
     (
         (10, [9, 2, 6, 5, 8, 3, 7, 4, 1]),
         (100, [6, 7, 3, 8, 4, 5, 2, 9, 1]),
-        (10_000_000, [1, 2, 3]),
     )
 )
 def test_moves(num_moves: int, expected: List[int]) -> None:
