@@ -1,6 +1,6 @@
 from enum import auto, Enum
 import os.path
-from typing import NoReturn, Sequence, Set, Tuple
+from typing import NoReturn, Set, Tuple
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
@@ -12,7 +12,7 @@ def parse_deck(raw_deck: str) -> Deck:
     return tuple(int(card) for card in cards)
 
 
-def score_deck(deck: Sequence[int]) -> int:
+def score_deck(deck: Deck) -> int:
     return sum(v * p for v, p in zip(deck, range(len(deck), 0, -1)))
 
 
