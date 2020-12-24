@@ -11,10 +11,7 @@ def test_main() -> None:
 
 
 def test_parse_tiles() -> None:
-    raw_steps = 'esenee'
-    steps = main.parse_steps(raw_steps)
-    tile = main.reduce_steps(steps)
-    assert tile == main.Vec(3, 0)
+    assert main.parse_steps('esenee') == main.Vec(3, 0)
 
 
 def test_tile_parities() -> None:
@@ -40,9 +37,8 @@ def test_tile_parities() -> None:
         'neswnwewnwnwseenwseesewsenwsweewe',
         'wseweeenwnesenwwwswnew',
     ]
-    steps_list = [main.parse_steps(raw_steps) for raw_steps in raw_tiles]
-    duped_tiles = [main.reduce_steps(steps) for steps in steps_list]
-    tiles = main.tiles_from_steps(duped_tiles)
+    vecs = [main.parse_steps(raw_steps) for raw_steps in raw_tiles]
+    tiles = main.tiles_from_initial_vecs(vecs)
     assert main.count_black_tiles(tiles) == 10
 
 
@@ -96,6 +92,5 @@ def initial_arr() -> Generator[DefaultDict[main.Vec, main.Tile], None, None]:
         'neswnwewnwnwseenwseesewsenwsweewe',
         'wseweeenwnesenwwwswnew',
     ]
-    steps_list = [main.parse_steps(raw_steps) for raw_steps in raw_tiles]
-    duped_tiles = [main.reduce_steps(steps) for steps in steps_list]
-    yield main.tiles_from_steps(duped_tiles)
+    vecs = [main.parse_steps(raw_steps) for raw_steps in raw_tiles]
+    yield main.tiles_from_initial_vecs(vecs)

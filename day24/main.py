@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import auto, Enum
 import os.path
 import re
-from typing import DefaultDict, Iterable, Iterator, List, NoReturn, Set
+from typing import DefaultDict, Iterable, NoReturn, Set
 
 SCRIPT_DIR = os.path.dirname(os.path.relpath(__file__))
 
@@ -17,39 +17,22 @@ class Vec:
     def __add__(self, other: "Vec") -> "Vec":
         return Vec(self.q + other.q, self.r + other.r)
 
-    @staticmethod
-    def cardinals() -> "Iterator[Vec]":
-        yield from iter([
-            Vec(0, -1), Vec(1, -1), Vec(1, 0),
-            Vec(0, 1), Vec(-1, 1), Vec(-1, 0),
-        ])
+
+CARDINALS = {
+    'ne': Vec(1, -1),
+    'nw': Vec(0, -1),
+    'se': Vec(0, 1),
+    'sw': Vec(-1, 1),
+    'e': Vec(1, 0),
+    'w': Vec(-1, 0),
+}
 
 
-def parse_steps(raw_steps: str) -> List[Vec]:
+def parse_steps(raw_steps: str) -> Vec:
     delimited_steps = re.findall('ne|nw|se|sw|e|w', raw_steps)
-    return [parse_step(raw_step) for raw_step in delimited_steps]
-
-
-def parse_step(raw_step: str) -> Vec:
-    if raw_step == 'ne':
-        vec = Vec(1, -1)
-    elif raw_step == 'nw':
-        vec = Vec(0, -1)
-    elif raw_step == 'se':
-        vec = Vec(0, 1)
-    elif raw_step == 'sw':
-        vec = Vec(-1, 1)
-    elif raw_step == 'e':
-        vec = Vec(1, 0)
-    elif raw_step == 'w':
-        vec = Vec(-1, 0)
-    else:
-        raise ValueError(f"cannot convert str {raw_step} into Step")
-    return vec
-
-
-def reduce_steps(steps: Iterable[Vec]) -> Vec:
-    return sum(steps, Vec(0, 0))
+    return sum(
+        (CARDINALS[raw_step] for raw_step in delimited_steps), Vec(0, 0)
+    )
 
 
 class Tile(Enum):
@@ -60,9 +43,9 @@ class Tile(Enum):
 TileArr = DefaultDict[Vec, Tile]
 
 
-def tiles_from_steps(tiles: Iterable[Vec]) -> TileArr:
+def tiles_from_initial_vecs(vecs: Iterable[Vec]) -> TileArr:
     tile_parities: DefaultDict[Vec, int] = defaultdict(lambda: 0)
-    for vec in tiles:
+    for vec in vecs:
         tile_parities[vec] = (tile_parities[vec] + 1) % 2
     return defaultdict(lambda: Tile.WHITE, {
         vec: Tile.WHITE if parity == 0 else Tile.BLACK
@@ -79,7 +62,7 @@ def next_arrangement(tile_arr: TileArr) -> TileArr:
         defaultdict(lambda: Tile.WHITE, {
             vec + card: tile for vec, tile in tile_arr.items()
         })
-        for card in Vec.cardinals()
+        for card in CARDINALS.values()
     ]
     no_vecs: Set[Vec] = set()
     black_neighbor_counts = defaultdict(lambda: 0, {
@@ -94,7 +77,7 @@ def next_arrangement(tile_arr: TileArr) -> TileArr:
 
 def next_tile(tile: Tile, black_neighbor_count: int) -> Tile:
     if tile is Tile.BLACK:
-        if black_neighbor_count in [1, 2]:
+        if 1 <= black_neighbor_count <= 2:
             return Tile.BLACK
         else:
             return Tile.WHITE
@@ -109,10 +92,9 @@ def next_tile(tile: Tile, black_neighbor_count: int) -> Tile:
 
 def main() -> None:
     with open(f'{SCRIPT_DIR}/input.txt', 'r') as f:
-        steps_list = [parse_steps(raw_steps) for raw_steps in f.readlines()]
+        vecs = [parse_steps(raw_steps) for raw_steps in f.readlines()]
 
-    duped_tiles = [reduce_steps(steps) for steps in steps_list]
-    tiles = tiles_from_steps(duped_tiles)
+    tiles = tiles_from_initial_vecs(vecs)
 
     answer_1 = count_black_tiles(tiles)
     assert answer_1 == 232
